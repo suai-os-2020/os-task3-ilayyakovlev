@@ -4,8 +4,10 @@
 
 using namespace std;
 
+
 #define THREAD_COUNT 12
 #define SEMAPHORE_COUNT 3
+
 
 DWORD ThreadID;
 HANDLE hThread[THREAD_COUNT];
