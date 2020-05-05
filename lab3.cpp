@@ -382,7 +382,7 @@ unsigned int lab3_thread_graph_id()
 
 const char* lab3_unsynchronized_threads()
 {
-	return "bcdf";
+	return "bcde";
 }
 
 const char* lab3_sequential_threads()
