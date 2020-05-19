@@ -382,12 +382,12 @@ unsigned int lab3_thread_graph_id()
 
 const char* lab3_unsynchronized_threads()
 {
-	return "bcde";
+	return "ikm";
 }
 
 const char* lab3_sequential_threads()
 {
-	return "ikm";
+	return "ihgfe";
 }
 
 int lab3_init()
