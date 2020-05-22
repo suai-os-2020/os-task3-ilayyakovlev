@@ -4,8 +4,8 @@
 
 using namespace std;
 
-#define THREAD_COUNT 12//потоки
-#define SEMAPHORE_COUNT 5//семафоры
+#define THREAD_COUNT 12
+#define SEMAPHORE_COUNT 5
 
 DWORD ThreadID;
 HANDLE hThread[THREAD_COUNT];
@@ -126,60 +126,60 @@ DWORD WINAPI thread_a(LPVOID lpParam)
 		return GetLastError();
 	}
 
-	// wait I
+	// wait I sem
 	WaitForSingleObject(hThread[5], INFINITE);
-	// wait H
+	// wait H sem
 	WaitForSingleObject(hThread[6], INFINITE);
-	// wait G
+	// wait G sem
 	WaitForSingleObject(hThread[7], INFINITE);
-	// wait F
+	// wait F sem
 	WaitForSingleObject(hThread[8], INFINITE);
-	// wait E
+	// wait E sem
 	WaitForSingleObject(hThread[4], INFINITE);
 
-	// close G
+	// close I sem
 	CloseHandle(hThread[5]);
-	// close E
+	// close H sem
 	CloseHandle(hThread[6]);
-	// close D
+	// close G sem
 	CloseHandle(hThread[7]);
-	// close C
+	// close F sem
 	CloseHandle(hThread[8]);
-	// close F
+	// close E sem
 	CloseHandle(hThread[4]);
 
 	// step 4 
 
-	// start I sem
+	// start I 
 	hThread[5] = CreateThread(NULL, 0, thread_i, NULL, 0, &ThreadID);
 	if (hThread[5] == NULL) {
 		return GetLastError();
 	}
 
-	// start K sem
+	// start K 
 	hThread[9] = CreateThread(NULL, 0, thread_k, NULL, 0, &ThreadID);
 	if (hThread[9] == NULL) {
 		return GetLastError();
 	}
 
-	// start M sem
+	// start M 
 	hThread[10] = CreateThread(NULL, 0, thread_m, NULL, 0, &ThreadID);
 	if (hThread[10] == NULL) {
 		return GetLastError();
 	}
 
-	// wait I sem
+	// wait I 
 	WaitForSingleObject(hThread[5], INFINITE);
-	// wait K sem
+	// wait K 
 	WaitForSingleObject(hThread[9], INFINITE);
-	// wait M sem
+	// wait M 
 	WaitForSingleObject(hThread[10], INFINITE);
 
-	// close G sem
+	// close I
 	CloseHandle(hThread[5]);
-	// close K sem
+	// close K 
 	CloseHandle(hThread[9]);
-	// close M sem
+	// close M
 	CloseHandle(hThread[10]);
 
 	// step 5 
@@ -369,7 +369,7 @@ DWORD WINAPI thread_e_sem(LPVOID lpParam)
 
 unsigned int lab3_thread_graph_id()
 {
-	return 22;
+	return 2;
 }
 
 const char* lab3_unsynchronized_threads()
