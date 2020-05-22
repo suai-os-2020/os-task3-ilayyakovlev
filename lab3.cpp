@@ -4,8 +4,8 @@
 
 using namespace std;
 
-#define THREAD_COUNT 12
-#define SEMAPHORE_COUNT 5
+#define THREAD_COUNT 12//потоки
+#define SEMAPHORE_COUNT 5//семафоры
 
 DWORD ThreadID;
 HANDLE hThread[THREAD_COUNT];
