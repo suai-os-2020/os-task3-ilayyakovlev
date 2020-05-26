@@ -10,6 +10,8 @@ using namespace std;
 DWORD ThreadID;
 HANDLE hThread[THREAD_COUNT];
 HANDLE hSemaphore[SEMAPHORE_COUNT];
+HANDLE hInterval;
+HANDLE hContinue;
 HANDLE hMutex;
 
 DWORD WINAPI thread_a(LPVOID);
@@ -25,8 +27,6 @@ DWORD WINAPI thread_k(LPVOID);
 DWORD WINAPI thread_m(LPVOID);
 DWORD WINAPI thread_n(LPVOID);
 
-DWORD WINAPI thread_i_sem(LPVOID);
-DWORD WINAPI thread_e_sem(LPVOID);
 
 
 DWORD WINAPI thread_a(LPVOID lpParam)
@@ -45,18 +45,11 @@ DWORD WINAPI thread_a(LPVOID lpParam)
 		ReleaseMutex(hMutex);
 	}
 
-	// wait B
-	WaitForSingleObject(hThread[1], INFINITE);
-	// close B
-	CloseHandle(hThread[1]);
+	WaitForSingleObject(hInterval, INFINITE); // Thread_b
 
 	// step 2 
 
-	// start B
-	hThread[1] = CreateThread(NULL, 0, thread_b, NULL, 0, &ThreadID);
-	if (hThread[1] == NULL) {
-		return GetLastError();
-	}
+	ReleaseSemaphore(hContinue, 1, NULL); // Thread_b
 
 	// start C
 	hThread[2] = CreateThread(NULL, 0, thread_c, NULL, 0, &ThreadID);
@@ -83,21 +76,15 @@ DWORD WINAPI thread_a(LPVOID lpParam)
 	// wait D
 	WaitForSingleObject(hThread[3], INFINITE);
 	// wait E
-	WaitForSingleObject(hThread[4], INFINITE);
+	WaitForSingleObject(hInterval, INFINITE); // Thread_e
 
-	// close B
-	CloseHandle(hThread[1]);
-	// close C
-	CloseHandle(hThread[2]);
-	// close D
-	CloseHandle(hThread[3]);
-	// close E
-	CloseHandle(hThread[4]);
 
 	// step 3 
 
+	ReleaseSemaphore(hContinue, 1, NULL); // Thread_e
+
 	// start I
-	hThread[5] = CreateThread(NULL, 0, thread_i_sem, NULL, 0, &ThreadID);
+	hThread[5] = CreateThread(NULL, 0, thread_i, NULL, 0, &ThreadID);
 	if (hThread[5] == NULL) {
 		return GetLastError();
 	}
@@ -120,41 +107,20 @@ DWORD WINAPI thread_a(LPVOID lpParam)
 		return GetLastError();
 	}
 
-	// start E
-	hThread[4] = CreateThread(NULL, 0, thread_e_sem, NULL, 0, &ThreadID);
-	if (hThread[4] == NULL) {
-		return GetLastError();
-	}
-
-	// wait I sem
-	WaitForSingleObject(hThread[5], INFINITE);
-	// wait H sem
+	// wait H
 	WaitForSingleObject(hThread[6], INFINITE);
-	// wait G sem
+	// wait G
 	WaitForSingleObject(hThread[7], INFINITE);
-	// wait F sem
+	// wait F
 	WaitForSingleObject(hThread[8], INFINITE);
-	// wait E sem
+	// wait E
 	WaitForSingleObject(hThread[4], INFINITE);
-
-	// close I sem
-	CloseHandle(hThread[5]);
-	// close H sem
-	CloseHandle(hThread[6]);
-	// close G sem
-	CloseHandle(hThread[7]);
-	// close F sem
-	CloseHandle(hThread[8]);
-	// close E sem
-	CloseHandle(hThread[4]);
+	// wait I
+	WaitForSingleObject(hInterval, INFINITE); // Thread_i
 
 	// step 4 
 
-	// start I 
-	hThread[5] = CreateThread(NULL, 0, thread_i, NULL, 0, &ThreadID);
-	if (hThread[5] == NULL) {
-		return GetLastError();
-	}
+	ReleaseSemaphore(hContinue, 1, NULL); // Thread_i
 
 	// start K 
 	hThread[9] = CreateThread(NULL, 0, thread_k, NULL, 0, &ThreadID);
@@ -175,12 +141,6 @@ DWORD WINAPI thread_a(LPVOID lpParam)
 	// wait M 
 	WaitForSingleObject(hThread[10], INFINITE);
 
-	// close I
-	CloseHandle(hThread[5]);
-	// close K 
-	CloseHandle(hThread[9]);
-	// close M
-	CloseHandle(hThread[10]);
 
 	// step 5 
 
@@ -193,14 +153,21 @@ DWORD WINAPI thread_a(LPVOID lpParam)
 	// wait N 
 	WaitForSingleObject(hThread[11], INFINITE);
 
-	// close N
-	CloseHandle(hThread[11]);
-
 	return 0;
 }
 
 DWORD WINAPI thread_b(LPVOID lpParam)
 {
+	for (int i = 0; i < 3; i++) {
+		WaitForSingleObject(hMutex, INFINITE);
+		cout << "b" << flush;
+		computation();
+		ReleaseMutex(hMutex);
+	}
+
+	ReleaseSemaphore(hInterval, 1, NULL);
+	WaitForSingleObject(hContinue, INFINITE);
+
 	for (int i = 0; i < 3; i++) {
 		WaitForSingleObject(hMutex, INFINITE);
 		cout << "b" << flush;
@@ -244,18 +211,44 @@ DWORD WINAPI thread_e(LPVOID lpParam)
 		ReleaseMutex(hMutex);
 	}
 
+	ReleaseSemaphore(hInterval, 1, NULL);
+	//
+	WaitForSingleObject(hContinue, INFINITE);
+
+	for (int i = 0; i < 3; i++) {
+		WaitForSingleObject(hSemaphore[4], INFINITE);
+		WaitForSingleObject(hMutex, INFINITE);
+		cout << "e" << flush;
+		computation();
+		ReleaseMutex(hMutex);
+		ReleaseSemaphore(hSemaphore[0], 1, NULL);
+	}
+
 	return 0;
 }
 
 DWORD WINAPI thread_i(LPVOID lpParam)
 {
+
+	for (int i = 0; i < 3; i++) {
+		WaitForSingleObject(hSemaphore[0], INFINITE);
+		WaitForSingleObject(hMutex, INFINITE);
+		cout << "i" << flush;
+		computation();
+		ReleaseMutex(hMutex);
+		ReleaseSemaphore(hSemaphore[1], 1, NULL);
+	}
+
+	ReleaseSemaphore(hInterval, 1, NULL);
+	//
+	WaitForSingleObject(hContinue, INFINITE);
+
 	for (int i = 0; i < 3; i++) {
 		WaitForSingleObject(hMutex, INFINITE);
 		cout << "i" << flush;
 		computation();
 		ReleaseMutex(hMutex);
 	}
-
 	return 0;
 }
 
@@ -338,33 +331,6 @@ DWORD WINAPI thread_n(LPVOID lpParam)
 	return 0;
 }
 
-DWORD WINAPI thread_i_sem(LPVOID lpParam)
-{
-	for (int i = 0; i < 3; i++) {
-		WaitForSingleObject(hSemaphore[0], INFINITE);
-		WaitForSingleObject(hMutex, INFINITE);
-		cout << "i" << flush;
-		computation();
-		ReleaseMutex(hMutex);
-		ReleaseSemaphore(hSemaphore[1], 1, NULL);
-	}
-
-	return 0;
-}
-
-DWORD WINAPI thread_e_sem(LPVOID lpParam)
-{
-	for (int i = 0; i < 3; i++) {
-		WaitForSingleObject(hSemaphore[4], INFINITE);
-		WaitForSingleObject(hMutex, INFINITE);
-		cout << "e" << flush;
-		computation();
-		ReleaseMutex(hMutex);
-		ReleaseSemaphore(hSemaphore[0], 1, NULL);
-	}
-
-	return 0;
-}
 
 
 unsigned int lab3_thread_graph_id()
@@ -398,6 +364,11 @@ int lab3_init()
 		}
 	}
 
+	hInterval = CreateSemaphore(NULL, 0, 2, NULL);
+	hContinue = CreateSemaphore(NULL, 0, 2, NULL);
+
+
+
 	// start A
 	hThread[0] = CreateThread(NULL, 0, thread_a, NULL, 0, &ThreadID);
 	if (hThread[0] == NULL) {
@@ -405,14 +376,17 @@ int lab3_init()
 	}
 	// wait A
 	WaitForSingleObject(hThread[0], INFINITE);
-	// close A
-	CloseHandle(hThread[0]);
 
-	CloseHandle(hMutex);
-
+	CloseHandle ( hMutex );
+	//
+	CloseHandle( hInterval );
+	//
+	CloseHandle ( hContinue );
 	for (int i = 0; i < SEMAPHORE_COUNT; i++) {
 		CloseHandle(hSemaphore[i]);
 	}
+
+
 
 	return 0;
 }
